@@ -1,3 +1,4 @@
+# Web framework and persistence stack used by the application.
 Flask==3.0.3
 Flask-SQLAlchemy==3.1.1
 psycopg2-binary==2.9.9

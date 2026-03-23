@@ -1,3 +1,5 @@
+"""Legacy compatibility entrypoint kept alongside the package."""
+
 from app import create_app
 
 app = create_app()

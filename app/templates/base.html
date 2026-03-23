@@ -14,6 +14,7 @@
     />
   </head>
   <body>
+    {# Shared navigation for the main CRUD screens. #}
     <nav class="navbar navbar-expand-lg navbar-dark bg-dark mb-4">
       <div class="container">
         <a class="navbar-brand" href="{{ url_for('main.index') }}"
@@ -32,10 +33,13 @@
     </nav>
 
     <div class="container">
+      {# Flash messages are rendered once here so every page gets the same feedback pattern. #}
       {% with messages = get_flashed_messages(with_categories=true) %} {% if
       messages %} {% for category, message in messages %}
       <div class="alert alert-{{ category }}">{{ message }}</div>
-      {% endfor %} {% endif %} {% endwith %} {% block content %}{% endblock %}
+      {% endfor %} {% endif %} {% endwith %}
+      {# Child templates inject their page-specific content here. #}
+      {% block content %}{% endblock %}
     </div>
   </body>
 </html>

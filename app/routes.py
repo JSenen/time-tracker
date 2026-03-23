@@ -1,3 +1,5 @@
+"""HTTP routes and form helpers for the time tracker UI."""
+
 from datetime import datetime
 
 from flask import Blueprint, render_template, request, redirect, url_for, flash
@@ -12,6 +14,7 @@ main = Blueprint("main", __name__)
 
 
 def calculate_duration_minutes(start_str: str, end_str: str) -> int:
+    """Return the worked minutes between two HH:MM strings."""
     start_dt = datetime.strptime(start_str, "%H:%M")
     end_dt = datetime.strptime(end_str, "%H:%M")
     delta = end_dt - start_dt
@@ -19,6 +22,7 @@ def calculate_duration_minutes(start_str: str, end_str: str) -> int:
 
 
 def build_entries_url(start_date="", end_date="", edit_id=None) -> str:
+    """Build the entries URL keeping the active filters and edit context."""
     params = {}
     if start_date:
         params["start_date"] = start_date
@@ -30,18 +34,21 @@ def build_entries_url(start_date="", end_date="", edit_id=None) -> str:
 
 
 def get_entry_filters(source) -> tuple[str, str]:
+    """Extract the date filter values from request args or form data."""
     start_date = source.get("start_date", "").strip()
     end_date = source.get("end_date", "").strip()
     return start_date, end_date
 
 
 def parse_optional_date(date_str: str):
+    """Parse an ISO date string when present."""
     if not date_str:
         return None
     return datetime.strptime(date_str, "%Y-%m-%d").date()
 
 
 def parse_entry_form(form):
+    """Validate and normalize a time-entry form payload."""
     project_id = form.get("project_id", "").strip()
     category_id = form.get("category_id", "").strip()
     work_date = form.get("work_date", "").strip()
@@ -75,6 +82,8 @@ def parse_entry_form(form):
 
 
 def get_entries_query(start_date="", end_date=""):
+    """Return the historical entries query with optional date filters applied."""
+    # Load related project/category data up front to keep the template rendering simple.
     query = TimeEntry.query.options(
         joinedload(TimeEntry.project),
         joinedload(TimeEntry.category),
@@ -92,6 +101,7 @@ def get_entries_query(start_date="", end_date=""):
 
 
 def build_entry_form_data(entry=None):
+    """Prepare values for the create/edit form."""
     if entry is None:
         return {
             "project_id": "",
@@ -116,6 +126,7 @@ def build_entry_form_data(entry=None):
 
 @main.route("/")
 def index():
+    """Render the dashboard with the current high-level counters."""
     total_projects = Project.query.count()
     total_categories = Category.query.count()
     total_entries = TimeEntry.query.count()
@@ -132,6 +143,7 @@ def index():
 
 @main.route("/projects", methods=["GET", "POST"])
 def projects():
+    """Create projects and render the project list."""
     if request.method == "POST":
         name = request.form.get("name", "").strip()
         client_name = request.form.get("client_name", "").strip()
@@ -153,6 +165,7 @@ def projects():
 
 @main.route("/categories", methods=["GET", "POST"])
 def categories():
+    """Create categories and render the category list."""
     if request.method == "POST":
         name = request.form.get("name", "").strip()
         color = request.form.get("color", "").strip()
@@ -173,6 +186,7 @@ def categories():
 
 @main.route("/entries", methods=["GET", "POST"])
 def entries():
+    """Create entries and render the filtered/editable history view."""
     if request.method == "POST":
         start_date, end_date = get_entry_filters(request.form)
         entry_data, error_message = parse_entry_form(request.form)
@@ -222,6 +236,7 @@ def entries():
 
 @main.route("/entries/<int:entry_id>/edit", methods=["POST"])
 def update_entry(entry_id):
+    """Update an existing time entry from the shared entry form."""
     start_date, end_date = get_entry_filters(request.form)
     entry = TimeEntry.query.get_or_404(entry_id)
     entry_data, error_message = parse_entry_form(request.form)
@@ -246,6 +261,7 @@ def update_entry(entry_id):
 
 @main.route("/entries/<int:entry_id>/delete", methods=["POST"])
 def delete_entry(entry_id):
+    """Delete one time entry and return to the filtered history."""
     start_date, end_date = get_entry_filters(request.form)
     entry = TimeEntry.query.get_or_404(entry_id)
     db.session.delete(entry)

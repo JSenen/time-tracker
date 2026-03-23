@@ -1,8 +1,12 @@
+"""Database models for projects, categories and tracked time entries."""
+
 from datetime import datetime, date
 from app import db
 
 
 class Project(db.Model):
+    """Client work container used to group time entries."""
+
     __tablename__ = "projects"
 
     id = db.Column(db.Integer, primary_key=True)
@@ -16,6 +20,8 @@ class Project(db.Model):
 
 
 class Category(db.Model):
+    """Functional label applied to a time entry."""
+
     __tablename__ = "categories"
 
     id = db.Column(db.Integer, primary_key=True)
@@ -28,6 +34,8 @@ class Category(db.Model):
 
 
 class TimeEntry(db.Model):
+    """Single block of tracked work for a project and category."""
+
     __tablename__ = "time_entries"
 
     id = db.Column(db.Integer, primary_key=True)

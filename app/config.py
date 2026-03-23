@@ -1,7 +1,11 @@
+"""Centralized configuration loaded from environment variables."""
+
 import os
 
 
 class Config:
+    """Default Flask configuration for local and Docker environments."""
+
     SECRET_KEY = os.getenv("SECRET_KEY", "dev-secret-key")
     SQLALCHEMY_DATABASE_URI = os.getenv(
         "DATABASE_URL",

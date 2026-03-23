@@ -4,6 +4,7 @@
 <div class="row">
     <div class="col-md-5">
         <div class="card p-3 mb-4">
+            {# Shared form used both for creating and updating a time entry. #}
             <h4>{{ 'Editar entrada' if edit_entry else 'Nueva entrada' }}</h4>
             <form method="post" action="{{ url_for('main.update_entry', entry_id=edit_entry.id) if edit_entry else url_for('main.entries') }}">
                 <input type="hidden" name="start_date" value="{{ filters.start_date }}">
@@ -59,6 +60,7 @@
     </div>
     <div class="col-md-7">
         <div class="card p-3">
+            {# The history can be filtered by date range and each row can be edited or deleted. #}
             <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
                 <h4 class="mb-0">Histórico</h4>
                 <span class="text-muted small">{{ entries|length }} registro{{ '' if entries|length == 1 else 's' }}</span>

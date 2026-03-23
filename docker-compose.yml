@@ -1,5 +1,6 @@
 services:
   db:
+    # PostgreSQL persistence layer for projects, categories and time entries.
     image: postgres:16
     container_name: time_tracker_db
     restart: unless-stopped
@@ -12,12 +13,14 @@ services:
     ports:
       - "5432:5432"
     healthcheck:
+      # Delay the web container until PostgreSQL is actually ready to accept connections.
       test: ["CMD-SHELL", "pg_isready -U timetracker -d timetracker"]
       interval: 5s
       timeout: 5s
       retries: 10
 
   web:
+    # Flask application container running the root run.py entrypoint.
     build: .
     container_name: time_tracker_web
     restart: unless-stopped
@@ -32,5 +35,26 @@ services:
       - .:/app
     command: python run.py
 
+  pgadmin:
+    # Browser-based PostgreSQL administration UI.
+    image: dpage/pgadmin4:8
+    container_name: time_tracker_pgadmin
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    env_file:
+      - .env
+    environment:
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_DEFAULT_EMAIL}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_DEFAULT_PASSWORD}
+    ports:
+      - "5050:80"
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+
 volumes:
+  # Named volume so the database survives container recreation.
   postgres_data:
+  # Named volume so pgAdmin keeps its local state and saved connections.
+  pgadmin_data:
