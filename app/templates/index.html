@@ -1,0 +1,29 @@
+{% extends 'base.html' %} {% block content %}
+<h1 class="mb-4">Dashboard</h1>
+<div class="row g-3">
+  <div class="col-md-3">
+    <div class="card p-3">
+      <h5>Proyectos</h5>
+      <p class="display-6">{{ total_projects }}</p>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="card p-3">
+      <h5>Categorías</h5>
+      <p class="display-6">{{ total_categories }}</p>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="card p-3">
+      <h5>Entradas</h5>
+      <p class="display-6">{{ total_entries }}</p>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="card p-3">
+      <h5>Horas</h5>
+      <p class="display-6">{{ total_hours }}</p>
+    </div>
+  </div>
+</div>
+{% endblock %}

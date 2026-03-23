@@ -1,0 +1,49 @@
+{% extends 'base.html' %} {% block content %}
+<h1 class="mb-4">Categorías</h1>
+<div class="row">
+  <div class="col-md-5">
+    <div class="card p-3 mb-4">
+      <h4>Nueva categoría</h4>
+      <form method="post">
+        <div class="mb-3">
+          <label class="form-label">Nombre</label>
+          <input type="text" name="name" class="form-control" required />
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Color</label>
+          <input
+            type="text"
+            name="color"
+            class="form-control"
+            placeholder="#0d6efd"
+          />
+        </div>
+        <button class="btn btn-primary">Guardar</button>
+      </form>
+    </div>
+  </div>
+  <div class="col-md-7">
+    <div class="card p-3">
+      <h4>Listado</h4>
+      <table class="table table-striped">
+        <thead>
+          <tr>
+            <th>Nombre</th>
+            <th>Color</th>
+            <th>Activo</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for category in categories %}
+          <tr>
+            <td>{{ category.name }}</td>
+            <td>{{ category.color or '-' }}</td>
+            <td>{{ 'Sí' if category.active else 'No' }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}

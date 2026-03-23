@@ -1,0 +1,122 @@
+{% extends 'base.html' %}
+{% block content %}
+<h1 class="mb-4">Registro de horas</h1>
+<div class="row">
+    <div class="col-md-5">
+        <div class="card p-3 mb-4">
+            <h4>{{ 'Editar entrada' if edit_entry else 'Nueva entrada' }}</h4>
+            <form method="post" action="{{ url_for('main.update_entry', entry_id=edit_entry.id) if edit_entry else url_for('main.entries') }}">
+                <input type="hidden" name="start_date" value="{{ filters.start_date }}">
+                <input type="hidden" name="end_date" value="{{ filters.end_date }}">
+                <div class="mb-3">
+                    <label class="form-label">Proyecto</label>
+                    <select name="project_id" class="form-select" required>
+                        <option value="">Selecciona</option>
+                        {% for project in projects %}
+                        <option value="{{ project.id }}" {% if form_data.project_id|string == project.id|string %}selected{% endif %}>{{ project.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Categoría</label>
+                    <select name="category_id" class="form-select" required>
+                        <option value="">Selecciona</option>
+                        {% for category in categories %}
+                        <option value="{{ category.id }}" {% if form_data.category_id|string == category.id|string %}selected{% endif %}>{{ category.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Fecha</label>
+                    <input type="date" name="work_date" class="form-control" value="{{ form_data.work_date }}" required>
+                </div>
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Hora inicio</label>
+                        <input type="time" name="start_time" class="form-control" value="{{ form_data.start_time }}" required>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Hora fin</label>
+                        <input type="time" name="end_time" class="form-control" value="{{ form_data.end_time }}" required>
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Descripción</label>
+                    <textarea name="description" class="form-control">{{ form_data.description }}</textarea>
+                </div>
+                <div class="form-check mb-3">
+                    <input class="form-check-input" type="checkbox" name="billable" id="billable" {% if form_data.billable %}checked{% endif %}>
+                    <label class="form-check-label" for="billable">Facturable</label>
+                </div>
+                <div class="d-flex gap-2">
+                    <button class="btn btn-primary">{{ 'Actualizar' if edit_entry else 'Guardar' }}</button>
+                    {% if edit_entry %}
+                    <a class="btn btn-outline-secondary" href="{{ url_for('main.entries', start_date=filters.start_date, end_date=filters.end_date) }}">Cancelar</a>
+                    {% endif %}
+                </div>
+            </form>
+        </div>
+    </div>
+    <div class="col-md-7">
+        <div class="card p-3">
+            <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+                <h4 class="mb-0">Histórico</h4>
+                <span class="text-muted small">{{ entries|length }} registro{{ '' if entries|length == 1 else 's' }}</span>
+            </div>
+            <form method="get" class="row g-2 align-items-end mb-3">
+                <div class="col-sm-4">
+                    <label class="form-label">Desde</label>
+                    <input type="date" name="start_date" class="form-control" value="{{ filters.start_date }}">
+                </div>
+                <div class="col-sm-4">
+                    <label class="form-label">Hasta</label>
+                    <input type="date" name="end_date" class="form-control" value="{{ filters.end_date }}">
+                </div>
+                <div class="col-sm-4 d-flex gap-2">
+                    <button class="btn btn-outline-primary w-100">Filtrar</button>
+                    <a class="btn btn-outline-secondary w-100" href="{{ url_for('main.entries') }}">Limpiar</a>
+                </div>
+            </form>
+            <table class="table table-striped table-sm">
+                <thead>
+                    <tr>
+                        <th>Fecha</th>
+                        <th>Horario</th>
+                        <th>Proyecto</th>
+                        <th>Categoría</th>
+                        <th>Descripción</th>
+                        <th>Duración</th>
+                        <th>Facturable</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for entry in entries %}
+                    <tr>
+                        <td>{{ entry.work_date.strftime('%d/%m/%Y') }}</td>
+                        <td>{{ entry.start_time.strftime('%H:%M') }} - {{ entry.end_time.strftime('%H:%M') }}</td>
+                        <td>{{ entry.project.name }}</td>
+                        <td>{{ entry.category.name }}</td>
+                        <td>{{ entry.description or '-' }}</td>
+                        <td>{{ '%dh %02dm'|format(entry.duration_minutes // 60, entry.duration_minutes % 60) }}</td>
+                        <td>{{ 'Sí' if entry.billable else 'No' }}</td>
+                        <td class="text-nowrap">
+                            <a class="btn btn-sm btn-outline-primary" href="{{ url_for('main.entries', edit_id=entry.id, start_date=filters.start_date, end_date=filters.end_date) }}">Editar</a>
+                            <form method="post" action="{{ url_for('main.delete_entry', entry_id=entry.id) }}" class="d-inline">
+                                <input type="hidden" name="start_date" value="{{ filters.start_date }}">
+                                <input type="hidden" name="end_date" value="{{ filters.end_date }}">
+                                <button class="btn btn-sm btn-outline-danger" type="submit" onclick="return confirm('¿Eliminar esta entrada de tiempo?')">Eliminar</button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="8" class="text-center text-muted py-3">No hay registros para los filtros seleccionados.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
