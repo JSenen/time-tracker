@@ -13,12 +13,7 @@
         </div>
         <div class="mb-3">
           <label class="form-label">Color</label>
-          <input
-            type="text"
-            name="color"
-            class="form-control"
-            placeholder="#0d6efd"
-          />
+          <input type="color" name="color" class="form-control form-control-color" value="#0d6efd" />
         </div>
         <button class="btn btn-primary">Guardar</button>
       </form>
@@ -39,8 +34,22 @@
         <tbody>
           {% for category in categories %}
           <tr>
-            <td>{{ category.name }}</td>
-            <td>{{ category.color or '-' }}</td>
+            <td>
+              <span class="category-badge">
+                <span class="category-dot" {% if category.color %}style="background-color: {{ category.color }};"{% endif %}></span>
+                {{ category.name }}
+              </span>
+            </td>
+            <td>
+              {% if category.color %}
+              <span class="category-color-value">
+                <span class="category-swatch" style="background-color: {{ category.color }};"></span>
+                {{ category.color }}
+              </span>
+              {% else %}
+              -
+              {% endif %}
+            </td>
             <td>{{ 'Sí' if category.active else 'No' }}</td>
           </tr>
           {% endfor %}
