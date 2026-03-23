@@ -16,6 +16,10 @@
           <input type="text" name="client_name" class="form-control" />
         </div>
         <div class="mb-3">
+          <label class="form-label">Color</label>
+          <input type="color" name="color" class="form-control form-control-color" value="#198754" />
+        </div>
+        <div class="mb-3">
           <label class="form-label">Descripción</label>
           <textarea name="description" class="form-control"></textarea>
         </div>
@@ -27,10 +31,12 @@
     <div class="card p-3">
       {# Right column: current project catalogue. #}
       <h4>Listado</h4>
-      <table class="table table-striped">
+      <div class="table-responsive">
+      <table class="table table-striped align-middle">
         <thead>
           <tr>
             <th>Nombre</th>
+            <th>Color</th>
             <th>Cliente</th>
             <th>Activo</th>
           </tr>
@@ -38,13 +44,29 @@
         <tbody>
           {% for project in projects %}
           <tr>
-            <td>{{ project.name }}</td>
+            <td>
+              <span class="project-badge">
+                <span class="project-dot" {% if project.color %}style="background-color: {{ project.color }};"{% endif %}></span>
+                {{ project.name }}
+              </span>
+            </td>
+            <td>
+              {% if project.color %}
+              <span class="category-color-value">
+                <span class="category-swatch" style="background-color: {{ project.color }};"></span>
+                {{ project.color }}
+              </span>
+              {% else %}
+              -
+              {% endif %}
+            </td>
             <td>{{ project.client_name or '-' }}</td>
             <td>{{ 'Sí' if project.active else 'No' }}</td>
           </tr>
           {% endfor %}
         </tbody>
       </table>
+      </div>
     </div>
   </div>
 </div>

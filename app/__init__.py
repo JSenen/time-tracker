@@ -2,10 +2,24 @@
 
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
+from sqlalchemy import inspect, text
 
 from app.config import Config
 
 db = SQLAlchemy()
+
+
+def ensure_schema_updates():
+    """Apply lightweight schema updates for installations without migrations."""
+    inspector = inspect(db.engine)
+
+    if "projects" not in inspector.get_table_names():
+        return
+
+    project_columns = {column["name"] for column in inspector.get_columns("projects")}
+    if "color" not in project_columns:
+        db.session.execute(text("ALTER TABLE projects ADD COLUMN color VARCHAR(20)"))
+        db.session.commit()
 
 
 def create_app():
@@ -23,5 +37,6 @@ def create_app():
         app.register_blueprint(main)
         # Keep schema creation simple while the project does not use migrations yet.
         db.create_all()
+        ensure_schema_updates()
 
     return app

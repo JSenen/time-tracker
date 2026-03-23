@@ -1,5 +1,6 @@
 """HTTP routes and form helpers for the time tracker UI."""
 
+from collections import defaultdict
 from datetime import datetime
 
 from flask import Blueprint, render_template, request, redirect, url_for, flash
@@ -19,6 +20,12 @@ def calculate_duration_minutes(start_str: str, end_str: str) -> int:
     end_dt = datetime.strptime(end_str, "%H:%M")
     delta = end_dt - start_dt
     return int(delta.total_seconds() // 60)
+
+
+def format_duration(minutes: int) -> str:
+    """Render minutes as a human-friendly hours and minutes string."""
+    hours, remainder = divmod(minutes or 0, 60)
+    return f"{hours}h {remainder:02d}m"
 
 
 def build_entries_url(start_date="", end_date="", edit_id=None) -> str:
@@ -130,7 +137,64 @@ def index():
     total_projects = Project.query.count()
     total_categories = Category.query.count()
     total_entries = TimeEntry.query.count()
-    total_minutes = db.session.query(func.coalesce(func.sum(TimeEntry.duration_minutes), 0)).scalar()
+    total_minutes = db.session.query(func.coalesce(func.sum(TimeEntry.duration_minutes), 0)).scalar() or 0
+
+    project_totals = (
+        db.session.query(
+            Project.id,
+            Project.name,
+            Project.client_name,
+            Project.color,
+            func.coalesce(func.sum(TimeEntry.duration_minutes), 0).label("total_minutes"),
+            func.count(TimeEntry.id).label("entry_count"),
+        )
+        .outerjoin(TimeEntry, TimeEntry.project_id == Project.id)
+        .group_by(Project.id, Project.name, Project.client_name, Project.color)
+        .order_by(func.coalesce(func.sum(TimeEntry.duration_minutes), 0).desc(), Project.name.asc())
+        .all()
+    )
+
+    category_rows = (
+        db.session.query(
+            TimeEntry.project_id,
+            Category.id,
+            Category.name,
+            Category.color,
+            func.sum(TimeEntry.duration_minutes).label("total_minutes"),
+        )
+        .join(Category, Category.id == TimeEntry.category_id)
+        .group_by(TimeEntry.project_id, Category.id, Category.name, Category.color)
+        .all()
+    )
+
+    category_breakdown_map = defaultdict(list)
+    for row in category_rows:
+        category_breakdown_map[row.project_id].append(
+            {
+                "id": row.id,
+                "name": row.name,
+                "color": row.color,
+                "minutes": row.total_minutes or 0,
+            }
+        )
+
+    project_breakdown = []
+    for row in project_totals:
+        category_breakdown = sorted(
+            category_breakdown_map.get(row.id, []),
+            key=lambda item: (-item["minutes"], item["name"].lower()),
+        )
+        project_breakdown.append(
+            {
+                "id": row.id,
+                "name": row.name,
+                "client_name": row.client_name,
+                "color": row.color,
+                "total_minutes": row.total_minutes or 0,
+                "entry_count": row.entry_count or 0,
+                "category_breakdown": category_breakdown,
+            }
+        )
 
     return render_template(
         "index.html",
@@ -138,6 +202,8 @@ def index():
         total_categories=total_categories,
         total_entries=total_entries,
         total_hours=round(total_minutes / 60, 2),
+        project_breakdown=project_breakdown,
+        format_duration=format_duration,
     )
 
 
@@ -147,13 +213,19 @@ def projects():
     if request.method == "POST":
         name = request.form.get("name", "").strip()
         client_name = request.form.get("client_name", "").strip()
+        color = request.form.get("color", "").strip()
         description = request.form.get("description", "").strip()
 
         if not name:
             flash("El nombre del proyecto es obligatorio.", "danger")
             return redirect(url_for("main.projects"))
 
-        project = Project(name=name, client_name=client_name or None, description=description or None)
+        project = Project(
+            name=name,
+            client_name=client_name or None,
+            color=color or None,
+            description=description or None,
+        )
         db.session.add(project)
         db.session.commit()
         flash("Proyecto creado correctamente.", "success")
@@ -231,6 +303,7 @@ def entries():
         edit_entry=edit_entry,
         form_data=build_entry_form_data(edit_entry),
         filters={"start_date": start_date, "end_date": end_date},
+        format_duration=format_duration,
     )
 
 

@@ -79,7 +79,8 @@
                     <a class="btn btn-outline-secondary w-100" href="{{ url_for('main.entries') }}">Limpiar</a>
                 </div>
             </form>
-            <table class="table table-striped table-sm">
+            <div class="table-responsive">
+            <table class="table table-striped table-sm align-middle">
                 <thead>
                     <tr>
                         <th>Fecha</th>
@@ -97,15 +98,31 @@
                     <tr>
                         <td>{{ entry.work_date.strftime('%d/%m/%Y') }}</td>
                         <td>{{ entry.start_time.strftime('%H:%M') }} - {{ entry.end_time.strftime('%H:%M') }}</td>
-                        <td>{{ entry.project.name }}</td>
+                        <td>
+                            <span class="project-badge">
+                                <span class="project-dot" {% if entry.project.color %}style="background-color: {{ entry.project.color }};"{% endif %}></span>
+                                {{ entry.project.name }}
+                            </span>
+                        </td>
                         <td>
                             <span class="category-badge">
                                 <span class="category-dot" {% if entry.category.color %}style="background-color: {{ entry.category.color }};"{% endif %}></span>
                                 {{ entry.category.name }}
                             </span>
                         </td>
-                        <td>{{ entry.description or '-' }}</td>
-                        <td>{{ '%dh %02dm'|format(entry.duration_minutes // 60, entry.duration_minutes % 60) }}</td>
+                        <td>
+                            {% if entry.description %}
+                            <details class="entry-description">
+                                <summary>
+                                    {{ entry.description[:48] }}{% if entry.description|length > 48 %}...{% endif %}
+                                </summary>
+                                <div>{{ entry.description }}</div>
+                            </details>
+                            {% else %}
+                            <span class="text-muted">-</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ format_duration(entry.duration_minutes) }}</td>
                         <td>{{ 'Sí' if entry.billable else 'No' }}</td>
                         <td class="text-nowrap">
                             <a class="btn btn-sm btn-outline-primary" href="{{ url_for('main.entries', edit_id=entry.id, start_date=filters.start_date, end_date=filters.end_date) }}">Editar</a>
@@ -123,6 +140,7 @@
                     {% endfor %}
                 </tbody>
             </table>
+            </div>
         </div>
     </div>
 </div>

@@ -5,10 +5,11 @@ Aplicación web sencilla para registrar horas trabajadas por proyecto y categor�
 ## Qué hace ahora mismo
 
 - Alta y listado de proyectos
+- Color por proyecto para distinguirlos visualmente
 - Alta y listado de categorías
 - Alta, edición y borrado de entradas de tiempo
 - Filtro del histórico por rango de fechas
-- Dashboard con métricas generales
+- Dashboard con métricas generales y desglose por proyecto/categoría
 - Arranque con `docker compose`
 - Administración de PostgreSQL con `pgAdmin`
 
@@ -108,6 +109,7 @@ python run.py
 
 - nombre único
 - cliente opcional
+- color opcional
 - descripción opcional
 - flag `active`
 

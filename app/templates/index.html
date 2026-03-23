@@ -28,4 +28,55 @@
     </div>
   </div>
 </div>
+<div class="card p-3 mt-4">
+  <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+    <div>
+      <h4 class="mb-1">Desglose por proyecto</h4>
+      <p class="text-muted mb-0">Resumen de horas y categorías en la portada.</p>
+    </div>
+    <span class="text-muted small">{{ project_breakdown|length }} proyecto{{ '' if project_breakdown|length == 1 else 's' }}</span>
+  </div>
+  {% if project_breakdown %}
+  <div class="row g-3">
+    {% for project in project_breakdown %}
+    <div class="col-lg-6">
+      <div class="project-summary-card h-100" {% if project.color %}style="--project-accent: {{ project.color }};"{% endif %}>
+        <div class="d-flex justify-content-between align-items-start gap-3 mb-3">
+          <div>
+            <span class="project-badge project-badge-strong">
+              <span class="project-dot" {% if project.color %}style="background-color: {{ project.color }};"{% endif %}></span>
+              {{ project.name }}
+            </span>
+            <div class="text-muted small mt-2">
+              {{ project.client_name or 'Sin cliente asignado' }}
+            </div>
+          </div>
+          <div class="text-end">
+            <div class="summary-duration">{{ format_duration(project.total_minutes) }}</div>
+            <div class="text-muted small">{{ project.entry_count }} registro{{ '' if project.entry_count == 1 else 's' }}</div>
+          </div>
+        </div>
+        {% if project.category_breakdown %}
+        <div class="project-breakdown-list">
+          {% for category in project.category_breakdown %}
+          <div class="project-breakdown-row">
+            <span class="category-badge">
+              <span class="category-dot" {% if category.color %}style="background-color: {{ category.color }};"{% endif %}></span>
+              {{ category.name }}
+            </span>
+            <strong>{{ format_duration(category.minutes) }}</strong>
+          </div>
+          {% endfor %}
+        </div>
+        {% else %}
+        <p class="text-muted small mb-0">Todavía no hay horas registradas en este proyecto.</p>
+        {% endif %}
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <p class="text-muted mb-0">No hay proyectos creados todavía.</p>
+  {% endif %}
+</div>
 {% endblock %}
