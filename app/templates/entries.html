@@ -60,10 +60,10 @@
     </div>
     <div class="col-md-7">
         <div class="card p-3">
-            {# The history can be filtered by date range and each row can be edited or deleted. #}
+            {# Filtered history is grouped by project and each block can be expanded or collapsed. #}
             <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
                 <h4 class="mb-0">Histórico</h4>
-                <span class="text-muted small">{{ entries|length }} registro{{ '' if entries|length == 1 else 's' }}</span>
+                <span class="text-muted small">{{ history_summary.entry_count }} registro{{ '' if history_summary.entry_count == 1 else 's' }}</span>
             </div>
             <form method="get" class="row g-2 align-items-end mb-3">
                 <div class="col-sm-4">
@@ -79,68 +79,96 @@
                     <a class="btn btn-outline-secondary w-100" href="{{ url_for('main.entries') }}">Limpiar</a>
                 </div>
             </form>
-            <div class="table-responsive">
-            <table class="table table-striped table-sm align-middle">
-                <thead>
-                    <tr>
-                        <th>Fecha</th>
-                        <th>Horario</th>
-                        <th>Proyecto</th>
-                        <th>Categoría</th>
-                        <th>Descripción</th>
-                        <th>Duración</th>
-                        <th>Facturable</th>
-                        <th>Acciones</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for entry in entries %}
-                    <tr>
-                        <td>{{ entry.work_date.strftime('%d/%m/%Y') }}</td>
-                        <td>{{ entry.start_time.strftime('%H:%M') }} - {{ entry.end_time.strftime('%H:%M') }}</td>
-                        <td>
-                            <span class="project-badge">
-                                <span class="project-dot" {% if entry.project.color %}style="background-color: {{ entry.project.color }};"{% endif %}></span>
-                                {{ entry.project.name }}
-                            </span>
-                        </td>
-                        <td>
-                            <span class="category-badge">
-                                <span class="category-dot" {% if entry.category.color %}style="background-color: {{ entry.category.color }};"{% endif %}></span>
-                                {{ entry.category.name }}
-                            </span>
-                        </td>
-                        <td>
-                            {% if entry.description %}
-                            <details class="entry-description">
-                                <summary>
-                                    {{ entry.description[:48] }}{% if entry.description|length > 48 %}...{% endif %}
-                                </summary>
-                                <div>{{ entry.description }}</div>
-                            </details>
-                            {% else %}
-                            <span class="text-muted">-</span>
-                            {% endif %}
-                        </td>
-                        <td>{{ format_duration(entry.duration_minutes) }}</td>
-                        <td>{{ 'Sí' if entry.billable else 'No' }}</td>
-                        <td class="text-nowrap">
-                            <a class="btn btn-sm btn-outline-primary" href="{{ url_for('main.entries', edit_id=entry.id, start_date=filters.start_date, end_date=filters.end_date) }}">Editar</a>
-                            <form method="post" action="{{ url_for('main.delete_entry', entry_id=entry.id) }}" class="d-inline">
-                                <input type="hidden" name="start_date" value="{{ filters.start_date }}">
-                                <input type="hidden" name="end_date" value="{{ filters.end_date }}">
-                                <button class="btn btn-sm btn-outline-danger" type="submit" onclick="return confirm('¿Eliminar esta entrada de tiempo?')">Eliminar</button>
-                            </form>
-                        </td>
-                    </tr>
-                    {% else %}
-                    <tr>
-                        <td colspan="8" class="text-center text-muted py-3">No hay registros para los filtros seleccionados.</td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
+            {# Summary cards reflect only the currently filtered set of entries. #}
+            <div class="history-summary mb-3">
+                <div class="history-metric">
+                    <span class="history-metric-label">Proyectos</span>
+                    <strong>{{ history_summary.project_count }}</strong>
+                </div>
+                <div class="history-metric">
+                    <span class="history-metric-label">Horas totales</span>
+                    <strong>{{ format_duration(history_summary.total_minutes) }}</strong>
+                </div>
+                <div class="history-metric">
+                    <span class="history-metric-label">Facturable</span>
+                    <strong>{{ format_duration(history_summary.billable_minutes) }}</strong>
+                </div>
             </div>
+            {% if entry_groups %}
+            <div class="entry-group-list">
+                {% for group in entry_groups %}
+                {# Keep the edited project open; otherwise open the first project by default. #}
+                <details class="entry-group-card" {% if group.project.color %}style="--project-accent: {{ group.project.color }};"{% endif %} {% if (edit_entry and edit_entry.project_id == group.project.id) or (not edit_entry and loop.first) %}open{% endif %}>
+                    <summary class="entry-group-summary">
+                        <div class="entry-group-header">
+                            <div>
+                                <span class="project-badge project-badge-strong">
+                                    <span class="project-dot" {% if group.project.color %}style="background-color: {{ group.project.color }};"{% endif %}></span>
+                                    {{ group.project.name }}
+                                </span>
+                                <div class="entry-group-caption">
+                                    {{ group.project.client_name or 'Sin cliente asignado' }}
+                                </div>
+                            </div>
+                            <div class="entry-group-totals">
+                                <strong>{{ format_duration(group.total_minutes) }}</strong>
+                                <span>{{ group.entry_count }} registro{{ '' if group.entry_count == 1 else 's' }}</span>
+                            </div>
+                        </div>
+                        <span class="entry-group-toggle">Mostrar entradas</span>
+                    </summary>
+                    <div class="entry-group-body">
+                        <div class="entry-group-meta">
+                            <span>{{ format_duration(group.billable_minutes) }} de tiempo facturable</span>
+                            <span>{{ format_duration(group.total_minutes - group.billable_minutes) }} de tiempo no facturable</span>
+                        </div>
+                        <div class="entry-list">
+                            {% for entry in group.entries %}
+                            <article class="entry-row-card">
+                                <div class="entry-row-primary">
+                                    <div class="entry-date-pill">{{ entry.work_date.strftime('%d/%m/%Y') }}</div>
+                                    <div class="entry-time-range">{{ entry.start_time.strftime('%H:%M') }} - {{ entry.end_time.strftime('%H:%M') }}</div>
+                                    <span class="category-badge">
+                                        <span class="category-dot" {% if entry.category.color %}style="background-color: {{ entry.category.color }};"{% endif %}></span>
+                                        {{ entry.category.name }}
+                                    </span>
+                                </div>
+                                <div class="entry-row-description-block">
+                                    {% if entry.description %}
+                                    <details class="entry-description">
+                                        <summary>
+                                            {{ entry.description[:72] }}{% if entry.description|length > 72 %}...{% endif %}
+                                        </summary>
+                                        <div>{{ entry.description }}</div>
+                                    </details>
+                                    {% else %}
+                                    <span class="text-muted">Sin descripción</span>
+                                    {% endif %}
+                                </div>
+                                <div class="entry-row-secondary">
+                                    <span class="entry-duration-badge">{{ format_duration(entry.duration_minutes) }}</span>
+                                    <span class="entry-billable-badge {{ 'is-billable' if entry.billable else 'is-non-billable' }}">
+                                        {{ 'Facturable' if entry.billable else 'No facturable' }}
+                                    </span>
+                                    <div class="entry-actions">
+                                        <a class="btn btn-sm btn-outline-primary" href="{{ url_for('main.entries', edit_id=entry.id, start_date=filters.start_date, end_date=filters.end_date) }}">Editar</a>
+                                        <form method="post" action="{{ url_for('main.delete_entry', entry_id=entry.id) }}">
+                                            <input type="hidden" name="start_date" value="{{ filters.start_date }}">
+                                            <input type="hidden" name="end_date" value="{{ filters.end_date }}">
+                                            <button class="btn btn-sm btn-outline-danger" type="submit" onclick="return confirm('¿Eliminar esta entrada de tiempo?')">Eliminar</button>
+                                        </form>
+                                    </div>
+                                </div>
+                            </article>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </details>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="text-center text-muted py-3">No hay registros para los filtros seleccionados.</div>
+            {% endif %}
         </div>
     </div>
 </div>

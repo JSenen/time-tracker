@@ -90,7 +90,7 @@ def parse_entry_form(form):
 
 def get_entries_query(start_date="", end_date=""):
     """Return the historical entries query with optional date filters applied."""
-    # Load related project/category data up front to keep the template rendering simple.
+    # Eager load project and category so the grouped history view can render without extra queries.
     query = TimeEntry.query.options(
         joinedload(TimeEntry.project),
         joinedload(TimeEntry.category),
@@ -128,6 +128,43 @@ def build_entry_form_data(entry=None):
         "end_time": entry.end_time.strftime("%H:%M"),
         "description": entry.description or "",
         "billable": entry.billable,
+    }
+
+
+def build_entry_groups(entries_list):
+    """Build per-project groups and totals for the collapsible history view."""
+    grouped_entries = {}
+    total_minutes = 0
+    billable_minutes = 0
+
+    for entry in entries_list:
+        duration_minutes = entry.duration_minutes or 0
+        total_minutes += duration_minutes
+        if entry.billable:
+            billable_minutes += duration_minutes
+
+        project_id = entry.project_id
+        if project_id not in grouped_entries:
+            grouped_entries[project_id] = {
+                "project": entry.project,
+                "entries": [],
+                "entry_count": 0,
+                "total_minutes": 0,
+                "billable_minutes": 0,
+            }
+
+        group = grouped_entries[project_id]
+        group["entries"].append(entry)
+        group["entry_count"] += 1
+        group["total_minutes"] += duration_minutes
+        if entry.billable:
+            group["billable_minutes"] += duration_minutes
+
+    return list(grouped_entries.values()), {
+        "entry_count": len(entries_list),
+        "project_count": len(grouped_entries),
+        "total_minutes": total_minutes,
+        "billable_minutes": billable_minutes,
     }
 
 
@@ -258,7 +295,7 @@ def categories():
 
 @main.route("/entries", methods=["GET", "POST"])
 def entries():
-    """Create entries and render the filtered/editable history view."""
+    """Create entries and render the filtered history grouped by project."""
     if request.method == "POST":
         start_date, end_date = get_entry_filters(request.form)
         entry_data, error_message = parse_entry_form(request.form)
@@ -288,6 +325,7 @@ def entries():
         flash(str(exc), "danger")
         return redirect(url_for("main.entries"))
 
+    entry_groups, history_summary = build_entry_groups(entries_list)
     projects_list = Project.query.filter_by(active=True).order_by(Project.name.asc()).all()
     categories_list = Category.query.filter_by(active=True).order_by(Category.name.asc()).all()
     edit_entry = None
@@ -297,7 +335,8 @@ def entries():
 
     return render_template(
         "entries.html",
-        entries=entries_list,
+        entry_groups=entry_groups,
+        history_summary=history_summary,
         projects=projects_list,
         categories=categories_list,
         edit_entry=edit_entry,

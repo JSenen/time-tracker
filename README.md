@@ -8,6 +8,7 @@ Aplicación web sencilla para registrar horas trabajadas por proyecto y categor�
 - Color por proyecto para distinguirlos visualmente
 - Alta y listado de categorías
 - Alta, edición y borrado de entradas de tiempo
+- Histórico de horas agrupado por proyecto, con paneles plegables y resumen facturable
 - Filtro del histórico por rango de fechas
 - Dashboard con métricas generales y desglose por proyecto/categoría
 - Arranque con `docker compose`
@@ -29,10 +30,10 @@ Aplicación web sencilla para registrar horas trabajadas por proyecto y categor�
 │   ├── __init__.py        # Factory de Flask y arranque de SQLAlchemy
 │   ├── config.py          # Configuración por variables de entorno
 │   ├── models.py          # Modelos Project, Category y TimeEntry
-│   ├── routes.py          # Rutas, validaciones y acciones CRUD
+│   ├── routes.py          # Rutas, validaciones, agrupaciones y acciones CRUD
 │   ├── static/
-│   │   └── style.css      # Estilos mínimos de la interfaz
-│   └── templates/         # Plantillas Jinja2
+│   │   └── style.css      # Estilos del dashboard y de la vista agrupada de horas
+│   └── templates/         # Plantillas Jinja2 de dashboard y CRUD
 ├── docker-compose.yml     # Servicios web + PostgreSQL
 ├── Dockerfile             # Imagen de la aplicación
 ├── requirements.txt       # Dependencias Python
@@ -101,7 +102,7 @@ python run.py
 - `/` dashboard
 - `/projects` proyectos
 - `/categories` categorías
-- `/entries` registro e histórico de horas
+- `/entries` registro e histórico de horas agrupado por proyecto
 
 ## Modelo de datos
 
@@ -136,10 +137,11 @@ Pendiente de mejorar:
 
 - validación de duplicados en proyectos y categorías con mensaje amigable
 - manejo más fino de errores de base de datos
-- resumen real de horas por proyecto en el dashboard
+- acciones globales para expandir o contraer todos los proyectos en `/entries`
 - tests automatizados persistentes
 
 ## Notas
 
 - La base de datos se crea automáticamente al arrancar la aplicación.
+- La vista `/entries` muestra métricas del filtro activo y agrupa las entradas por proyecto.
 - `app/init.py` y `app/run.py` se mantienen como archivos de compatibilidad con una estructura anterior.
