@@ -112,6 +112,24 @@ body {
   gap: 1rem;
 }
 
+.chart-card {
+  border: 1px solid #e4e7eb;
+}
+
+.chart-shell {
+  position: relative;
+  min-height: 320px;
+}
+
+.chart-shell-compact {
+  min-height: 320px;
+}
+
+.chart-canvas {
+  width: 100% !important;
+  height: 100% !important;
+}
+
 .entry-description {
   min-width: 12rem;
 }
@@ -361,6 +379,31 @@ body {
   margin: 0;
 }
 
+.filter-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.export-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.filter-context-note {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.85rem 1rem;
+  border: 1px solid #dfe7e3;
+  border-radius: 0.9rem;
+  background: linear-gradient(180deg, rgba(247, 250, 248, 0.98), rgba(255, 255, 255, 0.98));
+  color: #334e68;
+}
+
 @media (max-width: 991.98px) {
   .history-summary {
     grid-template-columns: 1fr;
@@ -369,6 +412,11 @@ body {
   .entry-row-card {
     grid-template-columns: 1fr;
     align-items: flex-start;
+  }
+
+  .chart-shell,
+  .chart-shell-compact {
+    min-height: 280px;
   }
 
   .entry-row-secondary {
@@ -386,8 +434,19 @@ body {
   .entry-group-summary,
   .entry-group-header,
   .entry-row-primary,
-  .entry-row-secondary {
+  .entry-row-secondary,
+  .filter-context-note {
     flex-direction: column;
     align-items: flex-start;
+  }
+
+  .filter-toolbar,
+  .export-actions {
+    width: 100%;
+  }
+
+  .export-actions .btn,
+  .filter-toolbar .btn {
+    width: 100%;
   }
 }

@@ -28,6 +28,43 @@
     </div>
   </div>
 </div>
+<div class="row g-3 mt-1">
+  <div class="col-lg-7">
+    <div class="card p-3 h-100 chart-card">
+      <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+        <div>
+          <h4 class="mb-1">Horas por proyecto</h4>
+          <p class="text-muted mb-0">Comparativa rápida de la carga acumulada por cliente o iniciativa.</p>
+        </div>
+        <span class="text-muted small">{{ dashboard_charts.projects.labels|length }} serie{{ '' if dashboard_charts.projects.labels|length == 1 else 's' }}</span>
+      </div>
+      {% if dashboard_charts.projects.labels %}
+      <div class="chart-shell">
+        <canvas id="projectsChart" class="chart-canvas" aria-label="Gráfica de horas por proyecto"></canvas>
+      </div>
+      {% else %}
+      <p class="text-muted mb-0">Todavía no hay horas suficientes para mostrar esta gráfica.</p>
+      {% endif %}
+    </div>
+  </div>
+  <div class="col-lg-5">
+    <div class="card p-3 h-100 chart-card">
+      <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+        <div>
+          <h4 class="mb-1">Horas por categoría</h4>
+          <p class="text-muted mb-0">Distribución global del tiempo entre tipos de trabajo.</p>
+        </div>
+      </div>
+      {% if dashboard_charts.categories.labels %}
+      <div class="chart-shell chart-shell-compact">
+        <canvas id="categoriesChart" class="chart-canvas" aria-label="Gráfica de horas por categoría"></canvas>
+      </div>
+      {% else %}
+      <p class="text-muted mb-0">Registra algunas horas para ver el reparto por categoría.</p>
+      {% endif %}
+    </div>
+  </div>
+</div>
 <div class="card p-3 mt-4">
   <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
     <div>
@@ -81,4 +118,72 @@
   <p class="text-muted mb-0">No hay proyectos creados todavía.</p>
   {% endif %}
 </div>
+{% endblock %}
+{% block extra_scripts %}
+{% if dashboard_charts.projects.labels or dashboard_charts.categories.labels %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+<script>
+  const projectChartData = {{ dashboard_charts.projects | tojson }};
+  const categoryChartData = {{ dashboard_charts.categories | tojson }};
+
+  if (projectChartData.labels.length) {
+    new Chart(document.getElementById('projectsChart'), {
+      type: 'bar',
+      data: {
+        labels: projectChartData.labels,
+        datasets: [{
+          label: 'Horas',
+          data: projectChartData.hours,
+          backgroundColor: projectChartData.colors,
+          borderRadius: 10,
+          borderSkipped: false
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false }
+        },
+        scales: {
+          y: {
+            beginAtZero: true,
+            ticks: {
+              callback: (value) => `${value} h`
+            }
+          }
+        }
+      }
+    });
+  }
+
+  if (categoryChartData.labels.length) {
+    new Chart(document.getElementById('categoriesChart'), {
+      type: 'doughnut',
+      data: {
+        labels: categoryChartData.labels,
+        datasets: [{
+          data: categoryChartData.hours,
+          backgroundColor: categoryChartData.colors,
+          borderWidth: 0
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: {
+            position: 'bottom'
+          },
+          tooltip: {
+            callbacks: {
+              label: (context) => `${context.label}: ${context.formattedValue} h`
+            }
+          }
+        }
+      }
+    });
+  }
+</script>
+{% endif %}
 {% endblock %}

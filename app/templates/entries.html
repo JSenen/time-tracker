@@ -9,6 +9,7 @@
             <form method="post" action="{{ url_for('main.update_entry', entry_id=edit_entry.id) if edit_entry else url_for('main.entries') }}">
                 <input type="hidden" name="start_date" value="{{ filters.start_date }}">
                 <input type="hidden" name="end_date" value="{{ filters.end_date }}">
+                <input type="hidden" name="filter_project_id" value="{{ filters.project_id }}">
                 <div class="mb-3">
                     <label class="form-label">Proyecto</label>
                     <select name="project_id" class="form-select" required>
@@ -52,7 +53,7 @@
                 <div class="d-flex gap-2">
                     <button class="btn btn-primary">{{ 'Actualizar' if edit_entry else 'Guardar' }}</button>
                     {% if edit_entry %}
-                    <a class="btn btn-outline-secondary" href="{{ url_for('main.entries', start_date=filters.start_date, end_date=filters.end_date) }}">Cancelar</a>
+                    <a class="btn btn-outline-secondary" href="{{ url_for('main.entries', start_date=filters.start_date, end_date=filters.end_date, project_id=filters.project_id) }}">Cancelar</a>
                     {% endif %}
                 </div>
             </form>
@@ -66,19 +67,43 @@
                 <span class="text-muted small">{{ history_summary.entry_count }} registro{{ '' if history_summary.entry_count == 1 else 's' }}</span>
             </div>
             <form method="get" class="row g-2 align-items-end mb-3">
-                <div class="col-sm-4">
+                <div class="col-md-4">
                     <label class="form-label">Desde</label>
                     <input type="date" name="start_date" class="form-control" value="{{ filters.start_date }}">
                 </div>
-                <div class="col-sm-4">
+                <div class="col-md-4">
                     <label class="form-label">Hasta</label>
                     <input type="date" name="end_date" class="form-control" value="{{ filters.end_date }}">
                 </div>
-                <div class="col-sm-4 d-flex gap-2">
-                    <button class="btn btn-outline-primary w-100">Filtrar</button>
-                    <a class="btn btn-outline-secondary w-100" href="{{ url_for('main.entries') }}">Limpiar</a>
+                <div class="col-md-4">
+                    <label class="form-label">Proyecto</label>
+                    <select name="project_id" class="form-select">
+                        <option value="">Todos los proyectos</option>
+                        {% for project in projects %}
+                        <option value="{{ project.id }}" {% if filters.project_id == project.id|string %}selected{% endif %}>{{ project.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-12 filter-toolbar">
+                    <div class="d-flex gap-2 flex-wrap">
+                        <button class="btn btn-outline-primary">Filtrar</button>
+                        <a class="btn btn-outline-secondary" href="{{ url_for('main.entries') }}">Limpiar</a>
+                    </div>
+                    <div class="export-actions">
+                        <a class="btn btn-outline-success" href="{{ url_for('main.export_entries', start_date=filters.start_date, end_date=filters.end_date, project_id=filters.project_id, mode='summary') }}">Exportar resumen CSV</a>
+                        <a class="btn btn-outline-dark" href="{{ url_for('main.export_entries', start_date=filters.start_date, end_date=filters.end_date, project_id=filters.project_id, mode='detail') }}">Exportar detalle CSV</a>
+                    </div>
                 </div>
             </form>
+            {% if selected_project %}
+            <div class="filter-context-note mb-3">
+                Mostrando horas del proyecto
+                <span class="project-badge project-badge-strong">
+                    <span class="project-dot" {% if selected_project.color %}style="background-color: {{ selected_project.color }};"{% endif %}></span>
+                    {{ selected_project.name }}
+                </span>
+            </div>
+            {% endif %}
             {# Summary cards reflect only the currently filtered set of entries. #}
             <div class="history-summary mb-3">
                 <div class="history-metric">
@@ -151,10 +176,11 @@
                                         {{ 'Facturable' if entry.billable else 'No facturable' }}
                                     </span>
                                     <div class="entry-actions">
-                                        <a class="btn btn-sm btn-outline-primary" href="{{ url_for('main.entries', edit_id=entry.id, start_date=filters.start_date, end_date=filters.end_date) }}">Editar</a>
+                                        <a class="btn btn-sm btn-outline-primary" href="{{ url_for('main.entries', edit_id=entry.id, start_date=filters.start_date, end_date=filters.end_date, project_id=filters.project_id) }}">Editar</a>
                                         <form method="post" action="{{ url_for('main.delete_entry', entry_id=entry.id) }}">
                                             <input type="hidden" name="start_date" value="{{ filters.start_date }}">
                                             <input type="hidden" name="end_date" value="{{ filters.end_date }}">
+                                            <input type="hidden" name="filter_project_id" value="{{ filters.project_id }}">
                                             <button class="btn btn-sm btn-outline-danger" type="submit" onclick="return confirm('¿Eliminar esta entrada de tiempo?')">Eliminar</button>
                                         </form>
                                     </div>
